@@ -1,0 +1,17 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+
+# Generated JSON output (recreated by analyze.py on each run)
+output/*.json
+
+# Environment secrets — never commit passwords
+.env
