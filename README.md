@@ -56,14 +56,14 @@ Install the project dependencies into a virtual environment:
 uv sync
 ```
 
-This reads `pyproject.toml` and installs pandas, openpyxl, and python-dotenv
-into a local `.venv` folder. You only need to do this once.
+This reads `pyproject.toml` and installs pandas, openpyxl, python-dotenv,
+and paramiko into a local `.venv` folder. You only need to do this once.
 
 > **With pip instead of uv:**
 > ```bash
 > python -m venv .venv
 > source .venv/bin/activate      # Windows: .venv\Scripts\activate
-> pip install pandas openpyxl python-dotenv
+> pip install pandas openpyxl python-dotenv paramiko
 > ```
 
 ---
@@ -143,64 +143,177 @@ Open each JSON file and verify the numbers make sense. For example,
 
 ### Step 5 — Build the HTML layout
 
-Create `dashboard/index.html` with four sections:
-- A row of KPI cards (total revenue, total units, top product, top region)
-- A line chart canvas for monthly revenue
-- A bar chart canvas for revenue by product
-- A pie chart canvas for revenue by region
+Open `dashboard/index.html`. It contains four sections:
 
-Load Chart.js from a CDN at the bottom of the page — no npm needed.
+| Section | Element | Purpose |
+|---|---|---|
+| KPI cards | `<div class="card">` × 4 | Show summary numbers filled in by JS |
+| Monthly chart | `<canvas id="chart-monthly">` | Chart.js draws here |
+| Product chart | `<canvas id="chart-product">` | Chart.js draws here |
+| Region chart | `<canvas id="chart-region">` | Chart.js draws here |
+
+Notice the two `<script>` tags at the bottom:
+```html
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="app.js"></script>
+```
+Chart.js must be loaded **before** `app.js` so the `Chart` object exists
+when our code runs. No npm or build step — just two script tags.
+
+Open `dashboard/style.css` and walk through the key rule:
+```css
+grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+```
+This single line makes the four cards responsive: they fill the row and
+wrap automatically when the screen is too narrow. No media queries needed.
 
 ---
 
 ### Step 6 — Write app.js (fetch + Chart.js)
 
-Create `dashboard/app.js`:
-- Use `fetch()` to load the four JSON files
-- Wrap all four calls in `Promise.all()` so they load in parallel
-- Pass the data to Chart.js to render each chart
-- Add a `try/catch` so errors show a friendly message instead of a blank page
+Open `dashboard/app.js`. Walk through each section:
+
+**`loadJSON(filename)`** — fetches one JSON file and returns its contents:
+```js
+const response = await fetch(DATA_DIR + filename);
+return response.json();
+```
+
+**`Promise.all([...])`** — fires all four fetches at the same time and waits
+for all to finish before continuing. Faster than four separate `await` calls:
+```js
+const [summary, monthly, byProduct, byRegion] = await Promise.all([
+  loadJSON("summary.json"),
+  loadJSON("monthly_revenue.json"),
+  loadJSON("revenue_by_product.json"),
+  loadJSON("revenue_by_region.json"),
+]);
+```
+
+**Chart pattern** (same for all three charts):
+1. Extract `labels` array and `values` array from the JSON records
+2. Pass them to `new Chart(canvasElement, { type, data, options })`
+
+**`try/catch`** — if any fetch fails, students see a friendly error message
+in the browser instead of a silent blank page.
 
 ---
 
 ### Step 7 — Write upload.py (SFTP)
 
-Create `upload.py`:
-- Read SFTP credentials from `.env` using `python-dotenv`
-- Connect with `paramiko.SSHClient` (Python standard library — no extra install needed)
-- Upload everything in `output/` and `dashboard/` to the remote server
+Open `upload.py`. Key concepts to walk through:
+
+**`load_dotenv()`** reads `.env` and adds the variables to `os.environ`:
+```python
+from dotenv import load_dotenv
+load_dotenv()
+host = os.environ.get("SFTP_HOST")
+```
+
+**`paramiko.SSHClient`** manages the SSH connection that SFTP runs over:
+```python
+ssh = paramiko.SSHClient()
+ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+ssh.connect(host, port=22, username=user, password=password)
+```
+
+**`ssh.open_sftp()`** opens an SFTP session, then **`sftp.put()`** uploads a file:
+```python
+sftp = ssh.open_sftp()
+sftp.put("local/path/file.json", "/remote/path/file.json")
+sftp.close()
+ssh.close()
+```
+
+> **Before uploading:** the `output/` subfolder must already exist on your
+> server. Create it once via your hosting File Manager.
 
 ---
 
 ### Step 8 — Wire main.py
 
-Update `main.py` to import and call `analyze.main()` then `upload.main()`
-in sequence — one command runs the full pipeline.
+Open `main.py`. It imports both modules and calls them in order:
+
+```python
+import analyze
+import upload
+
+def main():
+    analyze.main()
+    upload.main()
+```
+
+This is the orchestrator — each module stays focused on one job, and
+`main.py` just ties them together.
 
 ---
 
 ### Step 9 — Deploy and verify
 
-1. Copy the credentials template and fill it in:
-   ```bash
-   cp .env.example .env
-   ```
-   Open `.env` and enter your SFTP host, username, password, and remote directory.
+**Test locally first** (before touching SFTP):
 
-2. Run the full pipeline:
-   ```bash
-   python main.py
-   ```
+```bash
+python analyze.py                  # generate the JSON files
+python -m http.server 8000         # start a local server
+```
 
-3. Visit your domain in a browser and confirm the dashboard loads with live data.
+Open `http://localhost:8000/dashboard/` in your browser.
+All four charts should render with real data. Check the browser DevTools
+Console tab — there should be no errors.
 
-> **Testing locally before deploying:**
-> Because `fetch()` is blocked when opening files directly (`file://` URLs),
-> always test with a local server:
-> ```bash
-> python -m http.server 8000
-> ```
-> Then open `http://localhost:8000/dashboard/` in your browser.
+**Deploy to the live server:**
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and fill in your SFTP host, username, password, and remote directory.
+Then run the full pipeline:
+
+```bash
+python main.py
+```
+
+Expected output:
+```
+=== Step 1: Generating data summaries ===
+
+Loaded 50 rows from data/sales.csv
+Wrote output/summary.json
+...
+
+=== Step 2: Uploading to SFTP server ===
+
+Connecting to yourdomain.com ...
+Connected.
+
+Uploading data files (output/)...
+  Uploaded: monthly_revenue.json  →  /htdocs/dashboard/output/monthly_revenue.json
+  ...
+
+Uploading dashboard files (dashboard/)...
+  Uploaded: app.js  →  /htdocs/dashboard/app.js
+  ...
+
+Upload complete. Visit your site to verify the dashboard is live.
+
+Pipeline complete.
+```
+
+Visit `https://yourdomain.com/dashboard/` and confirm the charts load.
+Open DevTools > Network tab and verify the four JSON files return HTTP 200.
+
+---
+
+### Common issues
+
+| Problem | Cause | Fix |
+|---|---|---|
+| Charts are blank, no errors | Opened `index.html` directly | Use `python -m http.server 8000` |
+| `FileNotFoundError` on upload | `output/` folder missing on server | Create it via hosting File Manager |
+| Charts blank on live site | `DATA_DIR` path wrong for server layout | Adjust `DATA_DIR` in `app.js` |
+| `pandas not found` | Forgot to install dependencies | Run `uv sync` |
+| `Missing required variables` | `.env` file not created | Copy `.env.example` to `.env` |
 
 
 ---
