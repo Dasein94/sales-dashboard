@@ -87,7 +87,7 @@ Take a moment to scroll through the file and verify a few rows by hand.
 
 ### Step 3 — Walk through analyze.py
 
-Open `analyze.py`. It contains six functions — read through each one:
+Open `analyze.py`. It contains seven functions — read through each one:
 
 | Function | What it does |
 |---|---|
@@ -96,6 +96,7 @@ Open `analyze.py`. It contains six functions — read through each one:
 | `compute_monthly_revenue()` | Groups revenue by calendar month |
 | `compute_revenue_by_product()` | Groups revenue by product |
 | `compute_revenue_by_region()` | Groups revenue by region |
+| `compute_insights()` | Calls Gemini API and returns AI-written business insights |
 | `write_json(data, filename)` | Saves a Python dict or list as a JSON file |
 
 Key pandas concepts used:

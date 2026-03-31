@@ -161,14 +161,16 @@ function renderRegionChart(regionData) {
  */
 async function init() {
   try {
-    const [summary, monthly, byProduct, byRegion] = await Promise.all([
+    const [summary, insights, monthly, byProduct, byRegion] = await Promise.all([
       loadJSON("summary.json"),
+      loadJSON("insights.json"),
       loadJSON("monthly_revenue.json"),
       loadJSON("revenue_by_product.json"),
       loadJSON("revenue_by_region.json"),
     ]);
 
     renderSummary(summary);
+    document.getElementById("ai-insights").textContent = insights.insights;
     renderMonthlyChart(monthly);
     renderProductChart(byProduct);
     renderRegionChart(byRegion);

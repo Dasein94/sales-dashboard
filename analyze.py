@@ -6,9 +6,15 @@ Run with:
 """
 
 import json
+import os
 import pathlib
+import time
 
+from google import genai
 import pandas as pd
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 # ── File paths ────────────────────────────────────────────────────────────────
@@ -103,6 +109,58 @@ def compute_revenue_by_region(df: pd.DataFrame) -> list[dict]:
     return by_region.to_dict(orient="records")
 
 
+def compute_insights(df: pd.DataFrame) -> dict:
+    """Send a summary of the sales data to Gemini and return AI-written insights.
+
+    We build a compact text summary of the data and ask Gemini to identify
+    notable trends and patterns within it. The result is a plain string.
+    """
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise EnvironmentError(
+            "Missing GEMINI_API_KEY in .env — add it to enable AI insights."
+        )
+
+    # Build a compact summary to send to Gemini instead of the full raw CSV
+    monthly = compute_monthly_revenue(df)
+    by_product = compute_revenue_by_product(df)
+    by_region = compute_revenue_by_region(df)
+
+    data_summary = f"""
+Monthly revenue (Jan–Oct 2024):
+{json.dumps(monthly, indent=2)}
+
+Revenue by product:
+{json.dumps(by_product, indent=2)}
+
+Revenue by region:
+{json.dumps(by_region, indent=2)}
+""".strip()
+
+    prompt = f"""You are a business analyst. Based on the sales data below, write
+2-3 sentences of plain-English insight. Focus on notable trends, month-over-month
+changes, or unusual patterns visible within this dataset. Be specific and concise.
+
+{data_summary}"""
+
+    client = genai.Client(api_key=api_key)
+
+    for attempt in range(5):
+        try:
+            response = client.models.generate_content(
+                model="gemini-2.5-flash-lite",
+                contents=prompt,
+            )
+            return {"insights": response.text.strip()}
+        except Exception as e:
+            if "429" in str(e) and attempt < 4:
+                wait = 10 * (attempt + 1)
+                print(f"Rate limited — waiting {wait}s before retry {attempt + 1}/4…")
+                time.sleep(wait)
+            else:
+                raise
+
+
 def write_json(data: dict | list, filename: str) -> None:
     """Write a Python object to output/<filename> as formatted JSON.
 
@@ -124,6 +182,7 @@ def main():
     write_json(compute_monthly_revenue(df),     "monthly_revenue.json")
     write_json(compute_revenue_by_product(df),  "revenue_by_product.json")
     write_json(compute_revenue_by_region(df),   "revenue_by_region.json")
+    write_json(compute_insights(df),            "insights.json")
 
     print("\nDone. Check the output/ folder.")
 
