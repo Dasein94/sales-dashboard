@@ -1,6 +1,20 @@
-# Sales Dashboard
+# AI Powered Data Dashboard
 
-A minimal end-to-end sales reporting system built across two sessions.
+This project is based on a forked repository that provides a frontend dashboard structure. 
+
+### Main objective: build a dashboard with Chart.js and Gemini API integration, deployed to a live server
+
+## What I did
+- Set up the project locally and running it in a development environment
+- Learned how the dashboard loads and displays data from JSON files
+- Reviewed the JavaScript code used to generate charts and customized the appearance
+- Configured environmnent variables for deployment
+- Learned how SFTP deployment works and how files are uploaded to a web server
+- Deployed the dashboard to a live domain (Network Solutions)
+- Integrated the Google Gemini API (gemini-2.5-flash) to generate AI-assisted insights within the dashboard
+
+
+# Project description (by arslnyhy)
 
 Python reads a CSV file, computes revenue summaries with pandas, and exports
 the results as JSON files. A static HTML/JS dashboard reads those JSON files
