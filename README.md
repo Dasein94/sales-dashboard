@@ -2,7 +2,8 @@
 
 This project is based on a forked repository that provides a frontend dashboard structure. 
 
-### Main objective: build a dashboard with Chart.js and Gemini API integration, deployed to a live server
+### Main objective: 
+building a dashboard with Chart.js and Gemini API integration, deployed to a live server
 ---
 ## What I did
 - Set up the project locally and running it in a development environment
