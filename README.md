@@ -3,16 +3,25 @@
 This project is based on a forked repository that provides a frontend dashboard structure. 
 
 ### Main objective: build a dashboard with Chart.js and Gemini API integration, deployed to a live server
-
+---
 ## What I did
 - Set up the project locally and running it in a development environment
 - Learned how the dashboard loads and displays data from JSON files
-- Reviewed the JavaScript code used to generate charts and customized the appearance
+- Reviewed the JavaScript code used to generate charts and customize the appearance
 - Configured environmnent variables for deployment
 - Learned how SFTP deployment works and how files are uploaded to a web server
 - Deployed the dashboard to a live domain (Network Solutions)
+
+<img width="578" height="293" alt="live_domain" src="https://github.com/user-attachments/assets/ebfc2077-c0bd-41a7-a97b-7be3a21b6ef3" />
+
+  
 - Integrated the Google Gemini API (gemini-2.5-flash) to generate AI-assisted insights within the dashboard
 
+## Preview
+<img width="946" height="428" alt="dashboard" src="https://github.com/user-attachments/assets/455b4e53-4f0c-4bc6-bae5-3cf10f6bf6fb" />
+[View Dashboard](http://ariel-nietomartinez.space/)
+
+---
 
 # Project description (by arslnyhy)
 
