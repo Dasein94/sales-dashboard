@@ -9,8 +9,8 @@
 }
 
 body {
-  font-family: system-ui, sans-serif; /* uses the OS default font — no import needed */
-  background: #f0f2f5;
+  font-family: "Trebuchet MS", sans-serif; /* uses the OS default font — no import needed */
+  background: #c4cb2d;
   color: #222;
   padding: 1.5rem;
 }

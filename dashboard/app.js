@@ -14,8 +14,8 @@ const DATA_DIR = "../output/";
 
 // Colour palette shared across all charts
 const COLORS = [
-  "#4361ee", "#f72585", "#4cc9f0", "#7209b7",
-  "#f3722c", "#90be6d", "#43aa8b", "#3a0ca3",
+  "#4361ee", "#2580f7", "#4cc9f0", "#7209b7",
+  "#2cf39d", "#11124a", "#43aa8b", "#0ca33c",
 ];
 
 
@@ -40,9 +40,9 @@ async function loadJSON(filename) {
  * Intl.NumberFormat is built into every browser — no library needed.
  */
 function formatCurrency(value) {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("de-DE", {
     style: "currency",
-    currency: "USD",
+    currency: "EUR",
     minimumFractionDigits: 2,
   }).format(value);
 }
